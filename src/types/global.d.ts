@@ -1,0 +1,18 @@
+export {};
+
+declare global {
+  interface ImageFile {
+    file: File;
+    preview: string;
+    name: string;
+    size: number;
+    type: string;
+    text: string;
+    status: "Completed" | "Not Started" | "In Progress" | "Error";
+  }
+
+  interface ModalData {
+    name: string;
+    text: string;
+  }
+}
