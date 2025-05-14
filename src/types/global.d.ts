@@ -5,7 +5,7 @@ declare global {
     file: File;
     preview: string;
     name: string;
-    size: number;
+    size: string;
     type: string;
     text: string;
     status: "Completed" | "Not Started" | "In Progress" | "Error";

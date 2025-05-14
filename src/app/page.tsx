@@ -30,6 +30,16 @@ export default function page() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) {
+      return bytes + " B";
+    } else if (bytes < 1024 * 1024) {
+      return (bytes / 1024).toFixed(2) + " KB";
+    } else {
+      return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+    }
+  };
+
   const handleFileChange = (e: any) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
@@ -57,7 +67,7 @@ export default function page() {
       file,
       preview: URL.createObjectURL(file),
       name: file.name,
-      size: file.size,
+      size: formatFileSize(file.size),
       type: file.type,
       text: "",
       status: "Not Started",
@@ -202,30 +212,33 @@ export default function page() {
           </div> */}
         </div>
         <div className="mt-[-200px] text-white flex flex-col gap-10 justify-center items-center">
-          <div className="flex gap-10">
-            <button
-              onClick={handleDetectText}
-              className="flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-primary-base text-sm font-bold hover:opacity-90 active:translate-y-0.5 cursor-pointer"
-            >
-              {isLoading ? (
-                <>
-                  <LoaderCircle className="animate-spin" /> Đang chuyển đổi...
-                </>
-              ) : (
-                <>
-                  <CaseUpper /> Chuyển sang chữ
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setImages([]);
-              }}
-              className="cursor-pointer flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-primary-base text-sm font-bold hover:opacity-90 active:translate-y-0.5"
-            >
-              <X /> Xoá tất cả
-            </button>
-          </div>
+          {images.length > 0 && (
+            <div className="flex gap-10">
+              <button
+                onClick={handleDetectText}
+                className="flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-primary-base text-sm font-bold hover:opacity-90 active:translate-y-0.5 cursor-pointer"
+              >
+                {isLoading ? (
+                  <>
+                    <LoaderCircle className="animate-spin" /> Đang chuyển đổi...
+                  </>
+                ) : (
+                  <>
+                    <CaseUpper /> Chuyển sang chữ
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setImages([]);
+                }}
+                className="cursor-pointer flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-primary-base text-sm font-bold hover:opacity-90 active:translate-y-0.5"
+              >
+                <X /> Xoá tất cả
+              </button>
+            </div>
+          )}
+
           {images.map((item, index) => (
             <div
               key={index}
