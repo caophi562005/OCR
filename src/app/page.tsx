@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertToBase64 } from "@/lib/utils";
+import { convertToBase64, copyText, downloadText } from "@/lib/utils";
 import {
   CaseUpper,
   CircleCheckBig,
@@ -279,14 +279,24 @@ export default function page() {
 
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Copy className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white" />
+                        <Copy
+                          onClick={() => {
+                            copyText(item.text);
+                          }}
+                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white"
+                        />
                       </TooltipTrigger>
                       <TooltipContent side="bottom">Copy</TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Download className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white" />
+                        <Download
+                          onClick={() => {
+                            downloadText({ name: item.name, text: item.text });
+                          }}
+                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white"
+                        />
                       </TooltipTrigger>
                       <TooltipContent side="bottom">Tải xuống</TooltipContent>
                     </Tooltip>
