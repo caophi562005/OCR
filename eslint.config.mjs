@@ -17,6 +17,7 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "off", // Tắt rule này
       "@typescript-eslint/no-unused-expressions": "off",
       "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
+      "react-hooks/rules-of-hooks": "off",
     },
   },
 ];

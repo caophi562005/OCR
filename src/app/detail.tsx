@@ -23,7 +23,7 @@ export default function Detail(props: {
         setOpen(open);
       }}
     >
-      <DialogContent className="min-w-4xl">
+      <DialogContent className="min-w-4xl border-none">
         <DialogHeader>
           <DialogTitle>Xem chi tiết</DialogTitle>
           <DialogDescription>{data?.name}</DialogDescription>
@@ -50,7 +50,7 @@ export default function Detail(props: {
 
               <div
                 onClick={() => {
-                  downloadText(data!);
+                  downloadText(data);
                 }}
                 className="inline-flex cursor-pointer gap-2 shadow-lg items-center px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-800"
               >

@@ -3,6 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --color-primary-50: #001731;
+  --color-primary-base: #006fee;
+  --color-primary-200: #004493;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -118,5 +124,8 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  body::-webkit-scrollbar {
+    width: 0;
   }
 }

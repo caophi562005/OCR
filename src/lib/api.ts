@@ -52,6 +52,51 @@ export async function detectChineseText(
   }
 }
 
+export async function detectText(base64Image: string, visionApiKey: string) {
+  const endpoint = "https://vision.googleapis.com/v1/images:annotate";
+
+  const requestBody = {
+    requests: [
+      {
+        image: {
+          content: base64Image,
+        },
+        features: [
+          {
+            type: "TEXT_DETECTION",
+            maxResults: 10,
+          },
+        ],
+      },
+    ],
+  };
+
+  try {
+    const response = await fetch(`${endpoint}?key=${visionApiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error("Lỗi kết nối Vision API: " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (data.responses && data.responses[0].textAnnotations) {
+      return data.responses[0].textAnnotations[0].description;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Vision API Error:", error);
+    throw error;
+  }
+}
+
 // Tạo prompt text cho mô hình ngôn ngữ
 export function getPromptText(text: string) {
   return `Dưới đây là một văn bản được nhận dạng từ hình ảnh bằng OCR. 
