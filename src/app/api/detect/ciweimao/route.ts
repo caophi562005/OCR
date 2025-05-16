@@ -25,7 +25,8 @@ export async function POST(request: Request) {
     if (!detectedText) {
       return NextResponse.json(
         {
-          rawText: "Không tìm thấy văn bản",
+          rawText:
+            "Không tìm thấy văn bản trong hình ảnh hoặc không nhận dạng được chữ.",
           formattedText: null,
         },
         { status: 403 }
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
 
     let formattedText = null;
 
-    if (genaiApiKey && body.isArrange) {
+    if (genaiApiKey) {
       try {
         const formattingResult = await formatWithGenerativeAI(
           detectedText,
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         rawText: detectedText,
-        formattedText: formattedText !== null ? formattedText : detectedText,
+        formattedText: formattedText,
       },
       { status: 200 }
     );

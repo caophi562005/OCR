@@ -99,14 +99,15 @@ export async function detectText(base64Image: string, visionApiKey: string) {
 
 // Tạo prompt text cho mô hình ngôn ngữ
 export function getPromptText(text: string) {
-  return `Dưới đây là một văn bản được nhận dạng từ hình ảnh bằng OCR. 
+  return `Dưới đây là một văn bản tiếng Trung được nhận dạng từ hình ảnh bằng OCR. 
     Hãy kiểm tra và sửa lại định dạng xuống dòng, đồng thời loại bỏ các ký tự nhiễu không liên quan.
     
     Nhiệm vụ cụ thể:
     1. Tìm các câu hoặc đoạn đã bị ngắt dòng không đúng vị trí.
     2. Đặt xuống dòng ở những vị trí phù hợp theo ngữ nghĩa của văn bản.
-    3. Nếu có các đoạn văn, hãy tách thành các đoạn riêng biệt có ý nghĩa hoàn chỉnh.
-    4. Sắp xếp lại trình tự các câu nếu cần thiết để đảm bảo nội dung hợp lý và mạch lạc.
+    3. Nếu có các đoạn văn, hãy tách thành các đoạn riêng biệt.
+    4. Loại bỏ các mã hoặc ký tự không phải tiếng Trung như "VxI", "12VXI", "12VXM", "1zvxd", "1zx", v.v. 
+       (Thường là các chuỗi có chứa số, chữ cái latin và không phải là một phần của nội dung chính)
     5. Giữ nguyên nội dung chính, không thay đổi hoặc thêm bớt từ nào trong văn bản gốc.
     
     Chỉ trả về văn bản đã định dạng và làm sạch, không thêm bất kỳ giải thích hay bình luận nào.
@@ -114,7 +115,6 @@ export function getPromptText(text: string) {
     Văn bản gốc:
     ${text}`;
 }
-
 // Hàm gọi Generative AI API để định dạng văn bản
 export async function formatWithGenerativeAI(text: string, apiKey: string) {
   const endpoint =

@@ -5,26 +5,42 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertToBase64, copyText, downloadText } from "@/lib/utils";
 import {
+  convertToBase64,
+  copyText,
+  downloadMultipleTextsAsZip,
+  downloadText,
+} from "@/lib/utils";
+import {
+  BookUp,
   CaseUpper,
   CircleCheckBig,
-  CloudUpload,
   Copy,
   Download,
   Eye,
+  FileDown,
   LoaderCircle,
   Trash2,
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import Detail from "@/app/detail";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckedState } from "@radix-ui/react-checkbox";
 
 export default function page() {
   const [images, setImages] = useState<ImageFile[]>([]);
+  const [downloadAll, setDownloadAll] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isArrange, setIsArrange] = useState<CheckedState>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [modalData, setModalData] = useState<ModalData | null>(null);
 
@@ -39,6 +55,16 @@ export default function page() {
       return (bytes / (1024 * 1024)).toFixed(2) + " MB";
     }
   };
+
+  useEffect(() => {
+    const checkDownloadAll = () => {
+      const shouldEnableDownload = images.some(
+        (item) => item.text !== "" && item.status === "Completed"
+      );
+      setDownloadAll(shouldEnableDownload);
+    };
+    checkDownloadAll();
+  }, [images]);
 
   const handleFileChange = (e: any) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -101,7 +127,7 @@ export default function page() {
 
       // Process all images using Promise.all with map
       const processedResults: ImageFile[] = await Promise.all(
-        images.map(async (item, index) => {
+        images.map(async (item) => {
           try {
             // kiểm tra đã chuyển đổi chưa , nếu rồi thì pass qua ảnh này
             // if (item.text !== "") return item;
@@ -111,9 +137,12 @@ export default function page() {
             const base64Image = base64.split(`data:${item.type};base64,`)[1];
 
             // Call API endpoint
-            const response = await fetch("/api/detect", {
+            const response = await fetch("/api/detect/qidian", {
               method: "POST",
-              body: JSON.stringify({ image: base64Image }),
+              body: JSON.stringify({
+                image: base64Image,
+                isArrange: isArrange,
+              }),
             });
 
             if (!response.ok) {
@@ -129,7 +158,7 @@ export default function page() {
             // Return updated image with detected text
             return {
               ...item,
-              text: data.text,
+              text: data.formattedText,
               status: "Completed",
             };
           } catch (error: any) {
@@ -162,12 +191,15 @@ export default function page() {
     <div
       className="relative min-h-screen"
       style={{
-        backgroundColor: "rgb(0,0,128)",
-        background:
-          "linear-gradient(159deg, rgba(0,0,128,1) 0%, rgba(0,191,255,1) 100%)",
+        background: "linear-gradient(315deg, #f5f5f5 0%, #e34234 74%)",
       }}
     >
       <div className={`container ${isLoading ? "pointer-events-none" : ""}`}>
+        <div className="absolute w-full flex justify-center items-center mt-20">
+          <div className="bg-black w-fit py-5 px-10 rounded-2xl">
+            <Image src="/qidian.png" alt="qidian" width="188" height="55" />
+          </div>
+        </div>
         <div className="flex flex-col items-center justify-center min-h-screen">
           <div
             onClick={openSelecteFile}
@@ -180,12 +212,12 @@ export default function page() {
             onDragOver={(e) => {
               e.preventDefault();
             }}
-            className="cursor-pointer px-50 py-10 border-2 border-white border-dashed flex flex-col items-center justify-center gap-5 rounded-lg"
+            className="cursor-pointer px-50 py-10 border-2 border-black border-dashed flex flex-col items-center justify-center gap-5 rounded-lg"
           >
-            <CloudUpload
-              className="text-primary-base bg-primary-50 rounded-full p-5"
-              size={100}
-            />
+            <div className="text-[#e34234] p-5 bg-black rounded-full">
+              <BookUp size={60} />
+            </div>
+
             <div className="text-2xl text-white">
               Drop your files here or{" "}
               <span className="text-primary-50">Click to upload</span>
@@ -220,36 +252,118 @@ export default function page() {
         </div>
         <div className="mt-[-200px] text-white flex flex-col gap-10 justify-center items-center">
           {images.length > 0 && (
-            <div className="flex gap-10">
-              <button
-                onClick={handleDetectText}
-                className="flex gap-2 w-[190px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-primary-50 text-sm font-bold hover:brightness-120 active:translate-y-0.5 cursor-pointer"
-              >
-                {isLoading ? (
-                  <>
-                    <LoaderCircle className="animate-spin" /> Đang chuyển đổi...
-                  </>
-                ) : (
-                  <>
-                    <CaseUpper /> Chuyển sang chữ
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  setImages([]);
-                }}
-                className="cursor-pointer flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-primary-50 text-sm font-bold hover:brightness-120 active:translate-y-0.5"
-              >
-                <X /> Xoá tất cả
-              </button>
-            </div>
+            <>
+              <div className="flex gap-10">
+                <button
+                  onClick={handleDetectText}
+                  className="flex gap-2 w-[190px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold hover:brightness-120 active:translate-y-0.5 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <LoaderCircle className="animate-spin" /> Đang chuyển
+                      đổi...
+                    </>
+                  ) : (
+                    <>
+                      <CaseUpper /> Chuyển sang chữ
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setImages([]);
+                  }}
+                  className="cursor-pointer flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold hover:brightness-120 active:translate-y-0.5"
+                >
+                  <X /> Xoá tất cả
+                </button>
+
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={`border-none outline-none flex gap-2 min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold ${
+                        downloadAll === false
+                          ? "opacity-50 pointer-events-none"
+                          : "cursor-pointer hover:brightness-120 active:translate-y-0.5"
+                      }`}
+                    >
+                      <FileDown /> Tải tất cả
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-black text-white border-none">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        downloadMultipleTextsAsZip(images);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      Đưa các file .txt vào folder .zip
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => {
+                        let allText = "";
+                        images.map((item) => {
+                          if (allText !== "") allText += "\n~~~~~~~~~~~\n";
+                          allText += item.text;
+                        });
+                        downloadText({
+                          name: `${images.length} file(s)`,
+                          text: allText,
+                        });
+                      }}
+                    >
+                      Gộp các file .txt thành 1
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => {
+                        images.map((item) => {
+                          downloadText({
+                            name: item.name,
+                            text: item.text,
+                          });
+                        });
+                      }}
+                    >
+                      Tải tất cả file cùng lúc
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="my-[-20px] text-black font-bold w-[800px] flex gap-2 items-center justify-end">
+                <Checkbox
+                  onCheckedChange={(check) => {
+                    setIsArrange(check);
+                  }}
+                  className="border-2 border-black cursor-pointer"
+                  id="arrange"
+                />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label
+                      className="cursor-pointer select-none"
+                      htmlFor="arrange"
+                    >
+                      Sắp xếp
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Sắp xếp văn bản , câu văn mạch lạc
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </>
           )}
 
           {images.map((item, index) => (
             <div
               key={index}
-              className="flex items-center justify-between w-[800px]"
+              className="flex items-center justify-between w-[800px] text-black"
             >
               <div className="flex gap-5 items-center max-w-[700px]">
                 <div className="relative h-16 w-16">
@@ -278,7 +392,7 @@ export default function page() {
                               text: item.text,
                             });
                           }}
-                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white"
+                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium"
                         />
                       </TooltipTrigger>
                       <TooltipContent side="bottom">Xem</TooltipContent>
@@ -290,7 +404,7 @@ export default function page() {
                           onClick={() => {
                             copyText(item.text);
                           }}
-                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white"
+                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium"
                         />
                       </TooltipTrigger>
                       <TooltipContent side="bottom">Copy</TooltipContent>
@@ -302,19 +416,19 @@ export default function page() {
                           onClick={() => {
                             downloadText({ name: item.name, text: item.text });
                           }}
-                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium text-white"
+                          className="cursor-pointer shadow-lg rounded-md text-sm font-medium"
                         />
                       </TooltipTrigger>
                       <TooltipContent side="bottom">Tải xuống</TooltipContent>
                     </Tooltip>
 
-                    <CircleCheckBig className="text-green-300 font-bold" />
+                    <CircleCheckBig className="text-green-500 font-bold" />
                   </>
                 )}
 
                 {item.status === "Error" && (
                   <>
-                    {item.text} <X className="text-red-300 font-bold" />
+                    {item.text} <X className="text-red-500 font-bold" />
                   </>
                 )}
 
