@@ -152,7 +152,7 @@ export default function page() {
             // Return updated image with detected text
             return {
               ...item,
-              text: data.formattedText,
+              text: data.formattedText ? data.formattedText : data.rawText,
               status: "Completed",
             };
           } catch (error: any) {

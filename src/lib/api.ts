@@ -103,12 +103,12 @@ export function getPromptText(text: string) {
     Hãy kiểm tra và sửa lại định dạng xuống dòng, đồng thời loại bỏ các ký tự nhiễu không liên quan.
     
     Nhiệm vụ cụ thể:
-    1. Tìm các câu hoặc đoạn đã bị ngắt dòng không đúng vị trí.
-    2. Đặt xuống dòng ở những vị trí phù hợp theo ngữ nghĩa của văn bản.
-    3. Nếu có các đoạn văn, hãy tách thành các đoạn riêng biệt.
-    4. Loại bỏ các mã hoặc ký tự không phải tiếng Trung như "VxI", "12VXI", "12VXM", "1zvxd", "1zx", v.v. 
-       (Thường là các chuỗi có chứa số, chữ cái latin và không phải là một phần của nội dung chính)
-    5. Giữ nguyên nội dung chính, không thay đổi hoặc thêm bớt từ nào trong văn bản gốc.
+    1. Dòng đầu tiên là tiêu đề của văn bản , không xoá hay chỉnh sửa bất kì ở dòng đó.
+    2. Tìm các câu hoặc đoạn đã bị ngắt dòng không đúng vị trí.
+    3. Đặt xuống dòng ở những vị trí phù hợp theo ngữ nghĩa của văn bản.
+    4. Nếu có các đoạn văn, hãy tách thành các đoạn riêng biệt.
+    5. Loại bỏ các mã hoặc ký tự không phải tiếng Trung như "VxI", "12VXI", "12VXM", "1zvxd", "1zx", v.v. 
+    6. Giữ nguyên nội dung chính, không thay đổi hoặc thêm bớt từ nào trong văn bản gốc.
     
     Chỉ trả về văn bản đã định dạng và làm sạch, không thêm bất kỳ giải thích hay bình luận nào.
     
