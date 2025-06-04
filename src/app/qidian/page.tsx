@@ -154,11 +154,12 @@ export default function page() {
             }
 
             const data = await response.json();
+            const text = data.formattedText.replace(/I/g, "");
 
             // Return updated image with detected text
             return {
               ...item,
-              text: data.formattedText,
+              text: text,
               status: "Completed",
             };
           } catch (error: any) {
