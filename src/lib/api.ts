@@ -16,11 +16,11 @@ export async function detectChineseText(
         features: [
           {
             type: "TEXT_DETECTION",
-            maxResults: 10,
+            maxResults: 50,
           },
         ],
         imageContext: {
-          languageHints: ["zh-CN", "zh-TW"], // Gợi ý tiếng Trung giản thể và phồn thể
+          languageHints: ["zh-CN", "zh-TW", "en"],
         },
       },
     ],
@@ -100,18 +100,19 @@ export async function detectText(base64Image: string, visionApiKey: string) {
 // Tạo prompt text cho mô hình ngôn ngữ
 export function getPromptText(text: string) {
   return `Dưới đây là một văn bản tiếng Trung được nhận dạng từ hình ảnh bằng OCR. 
-    Hãy kiểm tra và sửa lại định dạng xuống dòng, đồng thời loại bỏ các ký tự nhiễu không liên quan.
-    
+    Hãy kiểm tra và sửa lại định dạng xuống dòng, dấu nháy kép, và loại bỏ các ký tự nhiễu không liên quan.
+
     Nhiệm vụ cụ thể:
-    1. Dòng đầu tiên là tiêu đề của văn bản , không xoá hay chỉnh sửa bất kì ở dòng đó.
-    2. Tìm các câu hoặc đoạn đã bị ngắt dòng không đúng vị trí.
-    3. Đặt xuống dòng ở những vị trí phù hợp theo ngữ nghĩa của văn bản.
-    4. Nếu có các đoạn văn, hãy tách thành các đoạn riêng biệt.
-    5. Loại bỏ các mã hoặc ký tự không phải tiếng Trung như "VxI", "12VXI", "12VXM", "1zvxd", "1zx", v.v. 
-    6. Giữ nguyên nội dung chính, không thay đổi hoặc thêm bớt từ nào trong văn bản gốc.
-    
+    1. Dòng đầu tiên là tiêu đề của văn bản, không xóa hay chỉnh sửa bất kỳ nội dung nào ở dòng đó.
+    2. Tìm các câu hoặc đoạn đã bị ngắt dòng không đúng vị trí, đặc biệt tại các dấu nháy kép (") hoặc các vị trí không phù hợp về ngữ nghĩa.
+    3. Đặt xuống dòng ở những vị trí phù hợp theo ngữ nghĩa của văn bản, đảm bảo mỗi câu hoặc đoạn văn có ý nghĩa hoàn chỉnh.
+    4. Nếu có các đoạn văn, hãy tách thành các đoạn riêng biệt, giữ nguyên các dấu câu như dấu chấm, dấu phẩy, và dấu nháy kép.
+    5. Chuẩn hóa dấu nháy kép: thay thế các dạng dấu nháy kép cong (“ hoặc ”) thành dấu nháy kép thẳng ("). Gộp các dòng bị ngắt sai do dấu nháy kép.
+    6. Loại bỏ các mã hoặc ký tự không phải tiếng Trung như "VxI", "12VXI", "12VXM", "1zvxd", "1zx", hoặc bất kỳ ký tự nhiễu nào không thuộc văn bản tiếng Trung.
+    7. Giữ nguyên nội dung chính, không thay đổi hoặc thêm bớt từ nào trong văn bản gốc.
+
     Chỉ trả về văn bản đã định dạng và làm sạch, không thêm bất kỳ giải thích hay bình luận nào.
-    
+
     Văn bản gốc:
     ${text}`;
 }
