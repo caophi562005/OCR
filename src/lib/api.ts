@@ -117,33 +117,81 @@ export function getPromptText(text: string) {
     ${text}`;
 }
 // Hàm gọi Generative AI API để định dạng văn bản
-export async function formatWithGenerativeAI(text: string, apiKey: string) {
-  const endpoint =
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent";
+// export async function formatWithGenerativeAI(text: string, apiKey: string) {
+//   const endpoint =
+//     "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent";
+//   const promptText = getPromptText(text);
+//   const requestBody = {
+//     contents: [
+//       {
+//         parts: [
+//           {
+//             text: promptText,
+//           },
+//         ],
+//       },
+//     ],
+//     generationConfig: {
+//       temperature: 0.2,
+//       topK: 40,
+//       topP: 0.95,
+//       // maxOutputTokens: 8192,
+//     },
+//   };
+
+//   try {
+//     const response = await fetch(`${endpoint}?key=${apiKey}`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(requestBody),
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(
+//         `Lỗi kết nối API (${response.status}): ${response.statusText}`
+//       );
+//     }
+
+//     const data = await response.json();
+
+//     let formattedText = "";
+
+//     // Parse response dựa vào định dạng phản hồi của API
+//     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+//       formattedText = data.candidates[0].content.parts[0].text;
+//     }
+
+//     return { formattedText };
+//   } catch (error: any) {
+//     // Cập nhật debug info với error
+//     console.error("Generative Language API Error:", error);
+//     throw { error };
+//   }
+// }
+
+export async function formatWithPerplexityAI(text: string, apiKey: string) {
+  const endpoint = "https://api.perplexity.ai/chat/completions";
   const promptText = getPromptText(text);
   const requestBody = {
-    contents: [
+    model: "sonar-pro",
+    messages: [
       {
-        parts: [
-          {
-            text: promptText,
-          },
-        ],
+        role: "user",
+        content: promptText,
       },
     ],
-    generationConfig: {
-      temperature: 0.2,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 8192,
-    },
+    max_tokens: 11000,
+    // Tuỳ chỉnh thêm nếu Perplexity có các option nâng cao
   };
 
   try {
-    const response = await fetch(`${endpoint}?key=${apiKey}`, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
     });
@@ -155,18 +203,22 @@ export async function formatWithGenerativeAI(text: string, apiKey: string) {
     }
 
     const data = await response.json();
+    console.log(data);
 
+    // Phân tích kết quả trả về từ Perplexity, thường field: data.choices[0].message.content
     let formattedText = "";
-
-    // Parse response dựa vào định dạng phản hồi của API
-    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-      formattedText = data.candidates[0].content.parts[0].text;
+    if (
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content
+    ) {
+      formattedText = data.choices[0].message.content;
     }
 
     return { formattedText };
   } catch (error: any) {
-    // Cập nhật debug info với error
-    console.error("Generative Language API Error:", error);
+    console.error("Perplexity API Error:", error);
     throw { error };
   }
 }

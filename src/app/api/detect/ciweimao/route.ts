@@ -1,6 +1,6 @@
 // Route API xử lý việc nhận dạng văn bản
 import { NextResponse } from "next/server";
-import { detectChineseText, formatWithGenerativeAI } from "@/lib/api";
+import { detectChineseText, formatWithPerplexityAI } from "@/lib/api";
 
 // Hàm xử lý request POST đến endpoint /api/detect
 export async function POST(request: Request) {
@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const image = body.image;
     const visionApiKey = process.env.VISION_API_KEY!;
-    const genaiApiKey = process.env.GEMINI_API_KEY!;
+    const perplexityApiKey = process.env.PERPLEXITY_API_KEY!;
 
     // Kiểm tra các trường bắt buộc
     if (!image) {
@@ -35,11 +35,11 @@ export async function POST(request: Request) {
 
     let formattedText = null;
 
-    if (genaiApiKey) {
+    if (perplexityApiKey) {
       try {
-        const formattingResult = await formatWithGenerativeAI(
+        const formattingResult = await formatWithPerplexityAI(
           detectedText,
-          genaiApiKey
+          perplexityApiKey
         );
         formattedText = formattingResult.formattedText;
       } catch (e: any) {
