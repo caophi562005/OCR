@@ -1,6 +1,6 @@
 // Route API xử lý việc nhận dạng văn bản
 import { NextResponse } from "next/server";
-import { detectChineseText, formatWithGenerativeAI } from "@/lib/api";
+import { detectChineseText, formatWithPerplexityAI } from "@/lib/api";
 
 // Hàm xử lý request POST đến endpoint /api/detect
 export async function POST(request: Request) {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     if (genaiApiKey && body.isArrange) {
       try {
-        const formattingResult = await formatWithGenerativeAI(
+        const formattingResult = await formatWithPerplexityAI(
           detectedText,
           genaiApiKey
         );
