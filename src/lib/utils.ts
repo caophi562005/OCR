@@ -6,19 +6,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const convertToBase64 = (file: any) => {
-  return new Promise((resolve, reject) => {
-    const fileReader = new FileReader();
-    fileReader.readAsDataURL(file);
+export const convertUrlToBase64 = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
 
-    fileReader.onload = () => {
-      resolve(fileReader.result);
-    };
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString("base64");
 
-    fileReader.onerror = (error) => {
-      reject(error);
-    };
-  });
+    return base64;
+  } catch (error) {
+    console.error("Error converting URL to base64:", error);
+    throw error;
+  }
 };
 
 export const copyText = async (text: string) => {

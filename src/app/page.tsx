@@ -5,30 +5,53 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertToBase64, copyText, downloadText } from "@/lib/utils";
 import {
+  copyText,
+  downloadMultipleTextsAsZip,
+  downloadText,
+} from "@/lib/utils";
+import {
+  BookUp,
   CaseUpper,
   CircleCheckBig,
-  CloudUpload,
   Copy,
   Download,
   Eye,
+  FileDown,
   LoaderCircle,
   Trash2,
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import Detail from "@/app/detail";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { upload } from "@vercel/blob/client";
 
 export default function page() {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [downloadAll, setDownloadAll] = useState<boolean>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [modalData, setModalData] = useState<ModalData | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const checkDownloadAll = () => {
+      const shouldEnableDownload = images.some(
+        (item) => item.text !== "" && item.status === "Completed"
+      );
+      setDownloadAll(shouldEnableDownload);
+    };
+    checkDownloadAll();
+  }, [images]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) {
@@ -101,19 +124,23 @@ export default function page() {
 
       // Process all images using Promise.all with map
       const processedResults: ImageFile[] = await Promise.all(
-        images.map(async (item, index) => {
+        images.map(async (item) => {
           try {
             // kiểm tra đã chuyển đổi chưa , nếu rồi thì pass qua ảnh này
             // if (item.text !== "") return item;
 
             // Convert image to base64
-            const base64: any = await convertToBase64(item.file);
-            const base64Image = base64.split(`data:${item.type};base64,`)[1];
+            const newBlob = await upload(item.name, item.file, {
+              access: "public",
+              handleUploadUrl: "/api/upload",
+            });
+
+            const imageUrl = newBlob.url;
 
             // Call API endpoint
             const response = await fetch("/api/detect", {
               method: "POST",
-              body: JSON.stringify({ image: base64Image }),
+              body: JSON.stringify({ imageUrl }),
             });
 
             if (!response.ok) {
@@ -129,7 +156,7 @@ export default function page() {
             // Return updated image with detected text
             return {
               ...item,
-              text: data.text,
+              text: data.formattedText ? data.formattedText : data.rawText,
               status: "Completed",
             };
           } catch (error: any) {
@@ -160,10 +187,9 @@ export default function page() {
 
   return (
     <div
-      className="relative min-h-screen"
+      className="relative min-h-screen w-full"
       style={{
-        background:
-          "linear-gradient(159deg, rgba(0,0,128,1) 0%, rgba(0,191,255,1) 100%)",
+        background: "linear-gradient(315deg, #d99058 0%, #f8de7e 74%)",
       }}
     >
       <div
@@ -171,6 +197,17 @@ export default function page() {
           isLoading ? "pointer-events-none" : ""
         }`}
       >
+        <div className="absolute w-full left-0 flex justify-center items-center mt-40 sm:mt-30 md:mt-50 lg:mt-10">
+          <div className="bg-white w-fit py-3 sm:py-5 px-6 sm:px-10 rounded-2xl">
+            <Image
+              src="/ciweimao.png"
+              alt="qidian"
+              width="185"
+              height="36"
+              className="h-auto md:w-[350px]"
+            />
+          </div>
+        </div>
         <div className="flex flex-col items-center justify-center min-h-screen">
           <div
             onClick={openSelecteFile}
@@ -185,13 +222,14 @@ export default function page() {
             }}
             className="cursor-pointer w-full lg:max-w-2xl sm:max-w-lg px-4 sm:px-10 py-6 sm:py-10 border-2 border-black border-dashed flex flex-col items-center justify-center gap-3 sm:gap-5 rounded-lg"
           >
-            <div className="text-primary-base p-3 sm:p-5 bg-black rounded-full">
-              <CloudUpload size={36} className="sm:hidden" />
-              <CloudUpload size={60} className="hidden sm:block" />
+            <div className="text-[#F8DE7E] p-3 sm:p-5 bg-black rounded-full">
+              <BookUp size={36} className="sm:hidden" />
+              <BookUp size={60} className="hidden sm:block" />
             </div>
+
             <div className="text-lg sm:text-2xl text-white text-center">
               Drop your files here or{" "}
-              <span className="text-primary-50">Click to upload</span>
+              <span className="text-black">Click to upload</span>
             </div>
             <div className="text-sm sm:text-md -mt-1 sm:-mt-2 text-white text-center">
               PNG, JPG or JPEG
@@ -205,21 +243,6 @@ export default function page() {
             onChange={handleFileChange}
             className="hidden"
           />
-          {/* <div className="py-3 flex gap-2 justify-center items-center w-full">
-            <hr className="border border-white w-1/4" />
-            <div className="text-white">OR</div>
-            <hr className="border border-white w-1/4" />
-          </div>
-          <div className="text-white text-2xl">Import from URL</div>
-          <div className="mt-2 text-lg text-primary-base w-full text-center">
-            <input
-              spellCheck="false"
-              className="w-2/5 px-3 py-2 focus:outline-none border-2 border-r-0 border-gray-700 rounded-tl-lg rounded-bl-lg"
-            />
-            <button className="text-white px-3 py-2 border-2 border-l-0 border-gray-700 rounded-tr-lg rounded-br-lg">
-              Upload
-            </button>
-          </div> */}
         </div>
         <div className="mt-[-300px] md:mt-[-400px] lg:mt-[-200px] text-white flex flex-col gap-5 sm:gap-10 justify-center items-center pb-12">
           {images.length > 0 && (
@@ -246,6 +269,61 @@ export default function page() {
               >
                 <X /> Xoá tất cả
               </button>
+
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`border-none outline-none flex gap-2 w-full sm:w-auto min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold ${
+                      downloadAll === false
+                        ? "opacity-50 pointer-events-none"
+                        : "cursor-pointer hover:brightness-120 active:translate-y-0.5"
+                    }`}
+                  >
+                    <FileDown /> Tải tất cả
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-black text-white border-none">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      downloadMultipleTextsAsZip(images);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    Đưa các file .txt vào folder .zip
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      let allText = "";
+                      images.map((item) => {
+                        if (allText !== "") allText += "\n~~~~~~~~~~~\n";
+                        allText += item.text;
+                      });
+                      downloadText({
+                        name: `${images.length} file(s)`,
+                        text: allText,
+                      });
+                    }}
+                  >
+                    Gộp các file .txt thành 1
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      images.map((item) => {
+                        downloadText({
+                          name: item.name,
+                          text: item.text,
+                        });
+                      });
+                    }}
+                  >
+                    Tải tất cả file cùng lúc
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
@@ -315,7 +393,7 @@ export default function page() {
                       <TooltipContent side="bottom">Tải xuống</TooltipContent>
                     </Tooltip>
 
-                    <CircleCheckBig className="text-green-300 font-bold w-5 h-5 sm:w-6 sm:h-6" />
+                    <CircleCheckBig className="text-green-500 font-bold w-5 h-5 sm:w-6 sm:h-6" />
                   </>
                 )}
 
@@ -324,7 +402,7 @@ export default function page() {
                     <span className="text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[200px]">
                       {item.text}
                     </span>{" "}
-                    <X className="text-red-300 font-bold w-5 h-5 sm:w-6 sm:h-6" />
+                    <X className="text-red-500 font-bold w-5 h-5 sm:w-6 sm:h-6" />
                   </>
                 )}
 

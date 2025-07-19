@@ -203,7 +203,7 @@ export async function formatWithPerplexityAI(text: string, apiKey: string) {
     }
 
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
 
     // Phân tích kết quả trả về từ Perplexity, thường field: data.choices[0].message.content
     let formattedText = "";

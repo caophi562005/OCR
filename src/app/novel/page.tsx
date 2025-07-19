@@ -6,7 +6,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  convertToBase64,
   copyText,
   downloadMultipleTextsAsZip,
   downloadText,
@@ -33,28 +32,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CheckedState } from "@radix-ui/react-checkbox";
+import { upload } from "@vercel/blob/client";
 
 export default function page() {
   const [images, setImages] = useState<ImageFile[]>([]);
-  const [downloadAll, setDownloadAll] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isArrange, setIsArrange] = useState<CheckedState>(false);
+  const [downloadAll, setDownloadAll] = useState<boolean>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [modalData, setModalData] = useState<ModalData | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) {
-      return bytes + " B";
-    } else if (bytes < 1024 * 1024) {
-      return (bytes / 1024).toFixed(2) + " KB";
-    } else {
-      return (bytes / (1024 * 1024)).toFixed(2) + " MB";
-    }
-  };
 
   useEffect(() => {
     const checkDownloadAll = () => {
@@ -65,6 +52,16 @@ export default function page() {
     };
     checkDownloadAll();
   }, [images]);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) {
+      return bytes + " B";
+    } else if (bytes < 1024 * 1024) {
+      return (bytes / 1024).toFixed(2) + " KB";
+    } else {
+      return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+    }
+  };
 
   const handleFileChange = (e: any) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -133,16 +130,17 @@ export default function page() {
             // if (item.text !== "") return item;
 
             // Convert image to base64
-            const base64: any = await convertToBase64(item.file);
-            const base64Image = base64.split(`data:${item.type};base64,`)[1];
+            const newBlob = await upload(item.name, item.file, {
+              access: "public",
+              handleUploadUrl: "/api/upload",
+            });
+
+            const imageUrl = newBlob.url;
 
             // Call API endpoint
-            const response = await fetch("/api/detect/qidian", {
+            const response = await fetch("/api/detect", {
               method: "POST",
-              body: JSON.stringify({
-                image: base64Image,
-                isArrange: isArrange,
-              }),
+              body: JSON.stringify({ imageUrl }),
             });
 
             if (!response.ok) {
@@ -154,12 +152,11 @@ export default function page() {
             }
 
             const data = await response.json();
-            const text = data.formattedText.replace(/I/g, "");
 
             // Return updated image with detected text
             return {
               ...item,
-              text: text,
+              text: data.formattedText ? data.formattedText : data.rawText,
               status: "Completed",
             };
           } catch (error: any) {
@@ -190,9 +187,9 @@ export default function page() {
 
   return (
     <div
-      className="relative min-h-screen"
+      className="relative min-h-screen w-full"
       style={{
-        background: "linear-gradient(315deg, #f5f5f5 0%, #e34234 74%)",
+        background: "linear-gradient(315deg, #d99058 0%, #f8de7e 74%)",
       }}
     >
       <div
@@ -201,13 +198,13 @@ export default function page() {
         }`}
       >
         <div className="absolute w-full left-0 flex justify-center items-center mt-40 sm:mt-30 md:mt-50 lg:mt-10">
-          <div className="bg-black w-fit py-3 sm:py-5 px-6 sm:px-10 rounded-2xl">
+          <div className="bg-white w-fit py-3 sm:py-5 px-6 sm:px-10 rounded-2xl">
             <Image
-              src="/qidian.png"
+              src="/ciweimao.png"
               alt="qidian"
-              width="188"
-              height="55"
-              className="h-auto md:w-[370px]"
+              width="185"
+              height="36"
+              className="h-auto md:w-[350px]"
             />
           </div>
         </div>
@@ -225,14 +222,14 @@ export default function page() {
             }}
             className="cursor-pointer w-full lg:max-w-2xl sm:max-w-lg px-4 sm:px-10 py-6 sm:py-10 border-2 border-black border-dashed flex flex-col items-center justify-center gap-3 sm:gap-5 rounded-lg"
           >
-            <div className="text-[#e34234] p-3 sm:p-5 bg-black rounded-full">
+            <div className="text-[#F8DE7E] p-3 sm:p-5 bg-black rounded-full">
               <BookUp size={36} className="sm:hidden" />
               <BookUp size={60} className="hidden sm:block" />
             </div>
 
             <div className="text-lg sm:text-2xl text-white text-center">
               Drop your files here or{" "}
-              <span className="text-primary-50">Click to upload</span>
+              <span className="text-black">Click to upload</span>
             </div>
             <div className="text-sm sm:text-md -mt-1 sm:-mt-2 text-white text-center">
               PNG, JPG or JPEG
@@ -246,129 +243,88 @@ export default function page() {
             onChange={handleFileChange}
             className="hidden"
           />
-          {/* <div className="py-3 flex gap-2 justify-center items-center w-full">
-            <hr className="border border-white w-1/4" />
-            <div className="text-white">OR</div>
-            <hr className="border border-white w-1/4" />
-          </div>
-          <div className="text-white text-2xl">Import from URL</div>
-          <div className="mt-2 text-lg text-primary-base w-full text-center">
-            <input
-              spellCheck="false"
-              className="w-2/5 px-3 py-2 focus:outline-none border-2 border-r-0 border-gray-700 rounded-tl-lg rounded-bl-lg"
-            />
-            <button className="text-white px-3 py-2 border-2 border-l-0 border-gray-700 rounded-tr-lg rounded-br-lg">
-              Upload
-            </button>
-          </div> */}
         </div>
         <div className="mt-[-300px] md:mt-[-400px] lg:mt-[-200px] text-white flex flex-col gap-5 sm:gap-10 justify-center items-center pb-12">
           {images.length > 0 && (
-            <>
-              <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
-                <button
-                  onClick={handleDetectText}
-                  className="flex gap-2 w-full sm:w-auto min-w-[160px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold hover:brightness-120 active:translate-y-0.5 cursor-pointer"
-                >
-                  {isLoading ? (
-                    <>
-                      <LoaderCircle className="animate-spin" /> Đang chuyển
-                      đổi...
-                    </>
-                  ) : (
-                    <>
-                      <CaseUpper /> Chuyển sang chữ
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    setImages([]);
-                  }}
-                  className="cursor-pointer flex gap-2 w-full sm:w-auto min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold hover:brightness-120 active:translate-y-0.5"
-                >
-                  <X /> Xoá tất cả
-                </button>
+            <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
+              <button
+                onClick={handleDetectText}
+                className="flex gap-2 w-full sm:w-auto min-w-[160px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold hover:brightness-120 active:translate-y-0.5 cursor-pointer"
+              >
+                {isLoading ? (
+                  <>
+                    <LoaderCircle className="animate-spin" /> Đang chuyển đổi...
+                  </>
+                ) : (
+                  <>
+                    <CaseUpper /> Chuyển sang chữ
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setImages([]);
+                }}
+                className="cursor-pointer flex gap-2 w-full sm:w-auto min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold hover:brightness-120 active:translate-y-0.5"
+              >
+                <X /> Xoá tất cả
+              </button>
 
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`border-none outline-none flex gap-2 w-full sm:w-auto min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold ${
-                        downloadAll === false
-                          ? "opacity-50 pointer-events-none"
-                          : "cursor-pointer hover:brightness-120 active:translate-y-0.5"
-                      }`}
-                    >
-                      <FileDown /> Tải tất cả
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-black text-white border-none">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        downloadMultipleTextsAsZip(images);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      Đưa các file .txt vào folder .zip
-                    </DropdownMenuItem>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`border-none outline-none flex gap-2 w-full sm:w-auto min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-xl h-10 px-4 text-[#f0f2f4] bg-black text-sm font-bold ${
+                      downloadAll === false
+                        ? "opacity-50 pointer-events-none"
+                        : "cursor-pointer hover:brightness-120 active:translate-y-0.5"
+                    }`}
+                  >
+                    <FileDown /> Tải tất cả
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-black text-white border-none">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      downloadMultipleTextsAsZip(images);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    Đưa các file .txt vào folder .zip
+                  </DropdownMenuItem>
 
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() => {
-                        let allText = "";
-                        images.map((item) => {
-                          if (allText !== "") allText += "\n~~~~~~~~~~~\n";
-                          allText += item.text;
-                        });
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      let allText = "";
+                      images.map((item) => {
+                        if (allText !== "") allText += "\n~~~~~~~~~~~\n";
+                        allText += item.text;
+                      });
+                      downloadText({
+                        name: `${images.length} file(s)`,
+                        text: allText,
+                      });
+                    }}
+                  >
+                    Gộp các file .txt thành 1
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      images.map((item) => {
                         downloadText({
-                          name: `${images.length} file(s)`,
-                          text: allText,
+                          name: item.name,
+                          text: item.text,
                         });
-                      }}
-                    >
-                      Gộp các file .txt thành 1
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() => {
-                        images.map((item) => {
-                          downloadText({
-                            name: item.name,
-                            text: item.text,
-                          });
-                        });
-                      }}
-                    >
-                      Tải tất cả file cùng lúc
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="my-[-10px] md:my-[-20px] text-black font-bold w-full max-w-2xl flex gap-2 items-center justify-end">
-                <Checkbox
-                  onCheckedChange={(check) => {
-                    setIsArrange(check);
-                  }}
-                  className="border-2 border-black cursor-pointer"
-                  id="arrange"
-                />
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <label
-                      className="cursor-pointer select-none"
-                      htmlFor="arrange"
-                    >
-                      Sắp xếp
-                    </label>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    Sắp xếp văn bản , câu văn mạch lạc
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </>
+                      });
+                    }}
+                  >
+                    Tải tất cả file cùng lúc
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
 
           {images.map((item, index) => (
