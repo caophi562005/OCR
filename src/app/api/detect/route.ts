@@ -20,7 +20,16 @@ export async function POST(request: Request) {
     }
 
     // Chuyển url ảnh thành base64
-    const base64Image: any = await convertUrlToBase64(imageUrl);
+    let base64Image: string;
+    try {
+      base64Image = await convertUrlToBase64(imageUrl);
+    } catch (e) {
+      console.error(e);
+      return NextResponse.json(
+        { error: "Failed to fetch image" },
+        { status: 400 }
+      );
+    }
 
     // Gọi Vision API để nhận dạng chữ
     const detectedText = await detectChineseText(base64Image, visionApiKey);

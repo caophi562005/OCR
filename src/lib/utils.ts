@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
+import https from "node:https";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -8,19 +9,34 @@ export function cn(...inputs: ClassValue[]) {
 
 export const convertUrlToBase64 = async (url: string): Promise<string> => {
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
-    }
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      https
+        .get(
+          url,
+          {
+            headers: {
+              "User-Agent": "Mozilla/5.0",
+              Accept: "image/*",
+            },
+          },
+          (res) => {
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(new Error(`Failed to fetch image: ${res.statusCode}`));
+              res.resume();
+              return;
+            }
+            const data: Uint8Array[] = [];
+            res.on("data", (chunk) => data.push(chunk));
+            res.on("end", () => resolve(Buffer.concat(data)));
+          }
+        )
+        .on("error", reject);
+    });
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString("base64");
-
-    return base64;
+    return buffer.toString("base64");
   } catch (error) {
     console.error("Error converting URL to base64:", error);
-    throw error;
+    throw new Error("Failed to download image");
   }
 };
 
