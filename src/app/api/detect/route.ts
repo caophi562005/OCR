@@ -1,7 +1,7 @@
 // Route API xử lý việc nhận dạng văn bản
 import { NextResponse } from "next/server";
 import { detectChineseText, formatWithPerplexityAI } from "@/lib/api";
-import { convertUrlToBase64 } from "@/lib/utils";
+import { convertUrlToBase64 } from "@/lib/server-utils";
 
 // Hàm xử lý request POST đến endpoint /api/detect
 export async function POST(request: Request) {
